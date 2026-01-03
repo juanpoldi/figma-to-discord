@@ -8,7 +8,7 @@ jobs:
   run-bot:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Necesario para guardar el historial
+      contents: write # Necesario para guardar el historial (vistos.json)
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
@@ -17,17 +17,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      
+      - name: Instalar dependencias
+        run: npm install
 
       - name: Ejecutar Bot
         run: node bot.js
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          RSS_URL: 'https://www.figma.com/es-es/release-notes/feed/atom.xml'
+          RSS_URL: 'https://www.theverge.com/rss/index.xml' # La URL RSS configurada en la interfaz web
 
       - name: Guardar historial
         run: |
           git config --global user.name "RSS Bot"
           git config --global user.email "bot@github.com"
           git add vistos.json
-          git commit -m "Actualizar historial [skip ci]" || echo "Sin cambios"
+          git commit -m "Actualizar historial [skip ci]" || echo "Sin cambios en vistos.json"
           git push
