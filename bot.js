@@ -1,10 +1,17 @@
+
 const fs = require('fs');
+const Parser = require('rss-parser');
+const parser = new Parser();
 
 async function run() {
-    const RSS_URL = process.env.RSS_URL || 'https://www.figma.com/es-es/release-notes/feed/atom.xml';
+    const RSS_URL = process.env.RSS_URL; // Esta URL se inyecta desde el workflow
     const DISCORD_WEBHOOK = process.env.DISCORD_WEBHOOK;
-    const DATA_FILE = './vistos.json';
+    const DATA_FILE = './vistos.json'; // Usamos vistos.json como estándar
 
+    if (!RSS_URL) {
+        console.error("Error: Falta RSS_URL en los Secrets o Environment de GitHub.");
+        process.exit(1);
+    }
     if (!DISCORD_WEBHOOK) {
         console.error("Error: Falta DISCORD_WEBHOOK en los Secrets de GitHub.");
         process.exit(1);
@@ -12,40 +19,64 @@ async function run() {
 
     let vistos = [];
     if (fs.existsSync(DATA_FILE)) {
-        try { vistos = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch(e) { vistos = []; }
+        try { 
+            vistos = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); 
+            console.log("Historial cargado con " + vistos.length + " ítems.");
+        } catch(e) { 
+            vistos = [];
+            console.warn("Error al parsear vistos.json, iniciando con historial vacío.");
+        }
+    } else {
+        console.log("No se encontró vistos.json, iniciando con historial vacío.");
     }
 
-    console.log("Comprobando actualizaciones...");
+    console.log("Comprobando actualizaciones en: " + RSS_URL);
     try {
-        const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`);
-        const data = await response.json();
+        // Usamos un proxy CORS público para poder acceder a los RSS que no tengan CORS habilitado.
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(RSS_URL)}`;
+        const feed = await parser.parseURL(proxyUrl);
         
-        if (!data.items) {
-            console.log("No se pudieron obtener items del RSS.");
+        if (!feed.items || feed.items.length === 0) {
+            console.log("No se pudieron obtener ítems del RSS o el feed está vacío.");
             return;
         }
 
-        const nuevas = data.items.filter(item => !vistos.includes(item.link)).reverse();
+        // Filtramos las noticias que no hemos visto, y las ordenamos de más antigua a más nueva para publicar en orden.
+        const nuevas = feed.items.filter(item => !vistos.includes(item.link)).reverse();
         console.log(`Encontradas ${nuevas.length} noticias nuevas.`);
 
         for (const noticia of nuevas) {
-            console.log(`Publicando: ${noticia.title}`);
-            await fetch(DISCORD_WEBHOOK, {
+            console.log(`Intentando publicar: "${noticia.title}" (${noticia.link})`);
+            const response = await fetch(DISCORD_WEBHOOK, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: `**${noticia.title}**\n${noticia.link}`
                 })
             });
-            vistos.push(noticia.link);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`ERROR al publicar "${noticia.title}": ${response.status} - ${errorText}`);
+                // No añadimos al historial si la publicación falla, para reintentar más tarde.
+            } else {
+                console.log(`Publicado con éxito: "${noticia.title}"`);
+                vistos.push(noticia.link);
+            }
         }
 
-        if (vistos.length > 100) vistos = vistos.slice(-100);
+        // Mantenemos el historial limpio, guardando solo los últimos 100 enlaces.
+        if (vistos.length > 100) {
+            vistos = vistos.slice(-100);
+            console.log("Historial podado a los últimos 100 ítems.");
+        }
+        
         fs.writeFileSync(DATA_FILE, JSON.stringify(vistos, null, 2));
-        console.log("Historial actualizado correctamente.");
+        console.log("Historial actualizado y guardado correctamente.");
         
     } catch (e) {
-        console.error("Error crítico durante la ejecución:", e.message);
+        console.error("Error crítico durante la ejecución del bot:", e.message);
+        // Si hay un error crítico (ej. RSS no accesible), no se actualizará el historial.
     }
 }
 
