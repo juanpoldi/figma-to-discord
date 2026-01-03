@@ -1,0 +1,33 @@
+name: RSS Auto-Poster
+on:
+  schedule:
+    - cron: '0 * * * *' # Se ejecuta cada hora en punto
+  workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Necesario para guardar el historial
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ejecutar Bot
+        run: node bot.js
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          RSS_URL: 'https://www.figma.com/es-es/release-notes/feed/atom.xml'
+
+      - name: Guardar historial
+        run: |
+          git config --global user.name "RSS Bot"
+          git config --global user.email "bot@github.com"
+          git add vistos.json
+          git commit -m "Actualizar historial [skip ci]" || echo "Sin cambios"
+          git push
