@@ -1,7 +1,7 @@
 name: RSS Auto-Poster
 on:
   schedule:
-    - cron: '0 8 * * *' # Se ejecuta cada hora en punto
+    - cron: '0 8 * * *' # Se ejecuta una vez al día a las 8:00 UTC
   workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         run: node bot.js
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          RSS_URL: 'https://www.theverge.com/rss/index.xml' # La URL RSS configurada en la interfaz web
+          RSS_URL: 'https://www.figma.com/es-la/release-notes/feed/atom.xml'
 
       - name: Guardar historial
         run: |
