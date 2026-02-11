@@ -4,8 +4,8 @@ const Parser = require('rss-parser');
 const parser = new Parser();
 
 async function run() {
-    const RSS_URL = process.env.RSS_URL; // Esta URL se inyecta desde el workflow
-    const DISCORD_WEBHOOK = process.env.DISCORD_WEBHOOK;
+    const RSS_URL = (process.env.RSS_URL || '').trim();
+    const DISCORD_WEBHOOK = (process.env.DISCORD_WEBHOOK || '').trim();
     const DATA_FILE = './vistos.json'; // Usamos vistos.json como estándar
 
     if (!RSS_URL) {
@@ -13,9 +13,12 @@ async function run() {
         process.exit(1);
     }
     if (!DISCORD_WEBHOOK) {
-        console.error("Error: Falta DISCORD_WEBHOOK en los Secrets de GitHub.");
+        console.error("Error: Falta DISCORD_WEBHOOK. Añade el secret en el repo: Settings → Secrets and variables → Actions → DISCORD_WEBHOOK.");
         process.exit(1);
     }
+    // En GitHub el valor del secret no se muestra al editarlo; si el run llega aquí, está configurado.
+    const webhookPreview = DISCORD_WEBHOOK.startsWith('https://discord.com/api/webhooks/') ? 'https://discord.com/api/webhooks/***' : '(comprueba que la URL empiece por https://discord.com/api/webhooks/)';
+    console.log("Webhook configurado:", webhookPreview);
 
     let vistos = [];
     if (fs.existsSync(DATA_FILE)) {
@@ -43,7 +46,12 @@ async function run() {
         // Filtramos las noticias que no hemos visto, y las ordenamos de más antigua a más nueva para publicar en orden.
         const nuevas = feed.items.filter(item => !vistos.includes(item.link)).reverse();
         console.log(`Encontradas ${nuevas.length} noticias nuevas.`);
+        if (nuevas.length === 0) {
+            console.log("No hay noticias nuevas para publicar. Nada que enviar a Discord.");
+            return;
+        }
 
+        let publicadas = 0;
         for (const noticia of nuevas) {
             console.log(`Intentando publicar: "${noticia.title}" (${noticia.link})`);
             const response = await fetch(DISCORD_WEBHOOK, {
@@ -61,7 +69,14 @@ async function run() {
             } else {
                 console.log(`Publicado con éxito: "${noticia.title}"`);
                 vistos.push(noticia.link);
+                publicadas++;
             }
+        }
+
+        if (nuevas.length > 0 && publicadas === 0) {
+            console.error("AVISO: Se intentaron publicar " + nuevas.length + " noticias pero Discord rechazó todas. Comprueba que la URL del webhook sea correcta y que el canal siga existiendo.");
+        } else {
+            console.log("Resumen: " + publicadas + " de " + nuevas.length + " noticias publicadas en Discord.");
         }
 
         // Mantenemos el historial limpio, guardando solo los últimos 100 enlaces.
@@ -79,4 +94,7 @@ async function run() {
     }
 }
 
-run();
+run().catch((e) => {
+    console.error("Error inesperado:", e);
+    process.exit(1);
+});
