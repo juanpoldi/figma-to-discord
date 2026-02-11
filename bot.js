@@ -32,9 +32,8 @@ async function run() {
 
     console.log("Comprobando actualizaciones en: " + RSS_URL);
     try {
-        // Usamos un proxy CORS público para poder acceder a los RSS que no tengan CORS habilitado.
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(RSS_URL)}`;
-        const feed = await parser.parseURL(proxyUrl);
+        // En Node (p. ej. GitHub Actions) no aplica CORS; el proxy daba 403 con Figma, así que usamos la URL directa.
+        const feed = await parser.parseURL(RSS_URL);
         
         if (!feed.items || feed.items.length === 0) {
             console.log("No se pudieron obtener ítems del RSS o el feed está vacío.");
