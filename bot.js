@@ -54,10 +54,13 @@ async function run() {
         let publicadas = 0;
         for (const noticia of nuevas) {
             console.log(`Intentando publicar: "${noticia.title}" (${noticia.link})`);
+            // thread_name es necesario para canales tipo Foro de Discord.
+            const threadName = (noticia.title || 'Nueva noticia').substring(0, 100);
             const response = await fetch(DISCORD_WEBHOOK, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    thread_name: threadName,
                     content: `**${noticia.title}**\n${noticia.link}`
                 })
             });

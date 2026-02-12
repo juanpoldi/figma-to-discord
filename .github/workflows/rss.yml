@@ -28,7 +28,7 @@ jobs:
           echo "Webhook longitud: ${#WEBHOOK}"
           BODY=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d '{"content":"Test desde GitHub Actions - si ves esto, el webhook funciona."}')
+            -d '{"thread_name":"Test Bot RSS","content":"Test desde GitHub Actions - si ves esto, el webhook funciona."}')
           HTTP_CODE=$(echo "$BODY" | tail -1)
           RESPONSE_BODY=$(echo "$BODY" | sed '$d')
           echo "Discord respondio con codigo: $HTTP_CODE"
