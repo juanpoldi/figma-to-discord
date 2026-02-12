@@ -21,25 +21,6 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
-      - name: Test webhook Discord
-        run: |
-          WEBHOOK=$(echo "$DISCORD_WEBHOOK" | tr -d '[:space:]')
-          echo "Webhook empieza por: ${WEBHOOK:0:45}..."
-          echo "Webhook longitud: ${#WEBHOOK}"
-          BODY=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d '{"thread_name":"Test Bot RSS","content":"Test desde GitHub Actions - si ves esto, el webhook funciona."}')
-          HTTP_CODE=$(echo "$BODY" | tail -1)
-          RESPONSE_BODY=$(echo "$BODY" | sed '$d')
-          echo "Discord respondio con codigo: $HTTP_CODE"
-          echo "Respuesta de Discord: $RESPONSE_BODY"
-          if [ "$HTTP_CODE" != "204" ]; then
-            echo "ERROR: Discord respondio $HTTP_CODE. Comprueba el secret DISCORD_WEBHOOK."
-            exit 1
-          fi
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-
       - name: Ejecutar Bot
         run: node bot.js
         env:
