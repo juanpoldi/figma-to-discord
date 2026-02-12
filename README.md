@@ -1,35 +1,35 @@
 # figma-to-discord
 
-Bot que lee el feed RSS de Figma (notas de la versión) y publica las noticias nuevas en un canal de Discord mediante un webhook. Se ejecuta en GitHub Actions (cron diario o manual).
+Bot that reads Figma's RSS feed (release notes) and posts new entries to a Discord channel via webhook. Runs on GitHub Actions (daily cron or manual trigger).
 
-## Qué hace
+## What it does
 
-1. Descarga el feed RSS configurado (por defecto: notas de la versión de Figma en español).
-2. Compara las entradas con un historial local (`vistos.json`) para no repetir publicaciones.
-3. Por cada noticia nueva, envía un mensaje al webhook de Discord (título + enlace).
-4. Si el canal es un **Foro** de Discord, crea un hilo por noticia con el título como nombre del hilo.
-5. Actualiza el historial y lo guarda en el repositorio para la siguiente ejecución.
+1. Fetches the configured RSS feed (default: Figma release notes in Spanish).
+2. Compares entries against a local history file (`posted.json`) to avoid duplicate posts.
+3. For each new entry, sends a message to the Discord webhook (title + link).
+4. If the Discord channel is a **Forum**, it creates a new thread per entry using the title as the thread name.
+5. Updates the history and commits it back to the repository for the next run.
 
-## Requisitos
+## Requirements
 
 - Node.js 20+
-- Cuenta en GitHub (para Actions)
-- Un webhook de Discord en el canal donde quieras recibir las noticias
+- GitHub account (for Actions)
+- A Discord webhook on the channel where you want to receive the news
 
-## Configuración en GitHub
+## GitHub setup
 
-1. **Secret del webhook**  
-   En el repo: **Settings** → **Secrets and variables** → **Actions** → crea o edita el secret **DISCORD_WEBHOOK** con la URL del webhook de Discord (Config del canal → Integraciones → Webhooks → Copiar URL).
+1. **Webhook secret**  
+   In the repo: **Settings** → **Secrets and variables** → **Actions** → create or edit the secret **DISCORD_WEBHOOK** with the Discord webhook URL (Channel settings → Integrations → Webhooks → Copy URL).
 
-2. **URL del RSS**  
-   Por defecto el workflow usa el feed de Figma (es-la). Para cambiar de feed, edita la variable `RSS_URL` en [.github/workflows/rss.yml](.github/workflows/rss.yml).
+2. **RSS URL**  
+   By default the workflow uses Figma's feed (es-la). To change the feed, edit the `RSS_URL` variable in [.github/workflows/rss.yml](.github/workflows/rss.yml).
 
-## Ejecución
+## Running
 
-- **Automática:** una vez al día a las 8:00 UTC (cron en el workflow).
-- **Manual:** en GitHub, pestaña **Actions** → **RSS Auto-Poster** → **Run workflow**.
+- **Automatic:** once a day at 8:00 UTC (cron in the workflow).
+- **Manual:** on GitHub, go to **Actions** → **RSS Auto-Poster** → **Run workflow**.
 
-## Ejecución local (opcional)
+## Local run (optional)
 
 ```bash
 npm install
@@ -38,18 +38,18 @@ DISCORD_WEBHOOK="https://discord.com/api/webhooks/..." \
 node bot.js
 ```
 
-## Estructura del proyecto
+## Project structure
 
-| Archivo | Descripción |
-|---------|-------------|
-| `bot.js` | Lógica principal: lee RSS, filtra por historial, publica en Discord. |
-| `vistos.json` | Lista de enlaces ya publicados (se actualiza en cada run). |
-| `.github/workflows/rss.yml` | Workflow de GitHub Actions (cron + manual). |
+| File | Description |
+|------|-------------|
+| `bot.js` | Main logic: reads RSS, filters by history, posts to Discord. |
+| `posted.json` | List of already posted links (updated on each run). |
+| `.github/workflows/rss.yml` | GitHub Actions workflow (cron + manual). |
 
-## Canal tipo Foro en Discord
+## Discord Forum channels
 
-Si el webhook apunta a un **canal Foro**, el bot envía cada noticia con `thread_name` para crear un hilo por entrada. No hace falta configuración extra.
+If the webhook points to a **Forum channel**, the bot sends each entry with a `thread_name` to create one thread per post. No extra configuration needed.
 
-## Licencia
+## License
 
 ISC
