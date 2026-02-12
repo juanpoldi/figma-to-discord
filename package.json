@@ -1,7 +1,7 @@
 {
-  "name": "mi-bot-rss",
+  "name": "figma-to-discord",
   "version": "1.0.0",
-  "description": "Bot para leer fuentes RSS y publicar en Discord",
+  "description": "Bot que publica las noticias de Figma (RSS) en Discord",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"

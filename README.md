@@ -1,6 +1,6 @@
-# mi-bot-rss
+# figma-to-discord
 
-Bot que lee un feed RSS y publica las noticias nuevas en un canal de Discord mediante un webhook. Pensado para ejecutarse en GitHub Actions (cron diario o manual).
+Bot que lee el feed RSS de Figma (notas de la versión) y publica las noticias nuevas en un canal de Discord mediante un webhook. Se ejecuta en GitHub Actions (cron diario o manual).
 
 ## Qué hace
 
